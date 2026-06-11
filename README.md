@@ -1,4 +1,4 @@
-# @takt/core
+# @vskstudio/takt-core
 
 Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).
 
@@ -10,10 +10,10 @@ Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).
 ## Snippet (no build step)
 
 ```html
-<script defer src="https://cdn.jsdelivr.net/npm/@takt/core/dist/takt.js" data-domain="example.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@vskstudio/takt-core/dist/takt.js" data-domain="example.com"></script>
 ```
 
-> Pin a version in production, e.g. `@takt/core@0.1.0`. jsDelivr and unpkg both serve the snippet straight from npm — no extra hosting required.
+> Pin a version in production, e.g. `@vskstudio/takt-core@0.1.0`. jsDelivr and unpkg both serve the snippet straight from npm — no extra hosting required.
 
 Then, anywhere on the page:
 
@@ -43,13 +43,13 @@ Calls made before the script finishes loading are queued and replayed — instal
 ## npm
 
 ```bash
-pnpm add @takt/core
+pnpm add @vskstudio/takt-core
 ```
 
 ### Quick start — default instance
 
 ```ts
-import { init, track, pageview } from '@takt/core'
+import { init, track, pageview } from '@vskstudio/takt-core'
 
 init({ domain: 'example.com', outbound: true, files: true })
 
@@ -66,7 +66,7 @@ track('Signup', {
 For full control (multiple instances, no globals, explicit teardown), construct an instance directly:
 
 ```ts
-import { createTakt } from '@takt/core'
+import { createTakt } from '@vskstudio/takt-core'
 
 const takt = createTakt({ domain: 'example.com', endpoint: '/api/event' })
 
@@ -89,7 +89,7 @@ stopFiles()
 ### Privacy
 
 ```ts
-import { optOut, optIn } from '@takt/core'
+import { optOut, optIn } from '@vskstudio/takt-core'
 
 optOut() // sets localStorage `takt_ignore` = '1'; no events are sent
 optIn()  // resumes tracking
@@ -113,7 +113,7 @@ Every event is posted to the endpoint as a compact JSON object. The keys are fro
 
 ## Architecture
 
-`@takt/core` follows a hexagonal (ports & adapters) layout:
+`@vskstudio/takt-core` follows a hexagonal (ports & adapters) layout:
 
 ```
 domain/          Pure business core, zero I/O.

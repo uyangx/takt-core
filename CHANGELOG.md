@@ -1,10 +1,10 @@
-# @takt/core
+# @vskstudio/takt-core
 
 ## 0.1.0
 
 ### Minor Changes
 
-- c18348c: Première version publique de `@takt/core` : SDK d'analytics minimaliste et respectueux de la vie privée, en architecture hexagonale.
+- c18348c: Première version publique de `@vskstudio/takt-core` : SDK d'analytics minimaliste et respectueux de la vie privée, en architecture hexagonale.
 
   - `createTakt(config)` — instance avec `track`, `pageview`, `optOut`/`optIn`, et `enableSpa`/`enableOutbound`/`enableFiles` qui renvoient des disposers.
   - Helpers top-level `init`/`track`/`pageview`/`optOut`/`optIn` sur une instance par défaut.
