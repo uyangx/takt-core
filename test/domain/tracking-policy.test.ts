@@ -71,6 +71,11 @@ describe('TrackingPolicy.isBlocked()', () => {
     expect(policy.isBlocked()).toBe(true)
   })
 
+  it('blocks the whole 127.0.0.0/8 loopback range (parity with the snippet)', () => {
+    const policy = new TrackingPolicy(fakeConsent(), fakeDnt(), fakeEnv('127.0.0.2'), cfg())
+    expect(policy.isBlocked()).toBe(true)
+  })
+
   it('blocks on ::1', () => {
     const policy = new TrackingPolicy(fakeConsent(), fakeDnt(), fakeEnv('::1'), cfg())
     expect(policy.isBlocked()).toBe(true)
