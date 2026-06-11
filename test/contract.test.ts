@@ -18,6 +18,7 @@ describe('backend payload contract', () => {
     for (const k of Object.keys(p)) {
       expect(ALLOWED_KEYS.has(k)).toBe(true)
     }
+    expect(Object.keys(p)).toEqual(expect.arrayContaining(['n', 'd', 'u', 'r', 'w']))
   })
 
   it('revenue uses short keys a (amount) and c (currency)', () => {
