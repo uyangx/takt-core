@@ -12,8 +12,8 @@ describe('send', () => {
     vi.stubGlobal('navigator', { sendBeacon: beacon })
     send('/api/event', payload)
     expect(beacon).toHaveBeenCalledOnce()
-    expect(beacon.mock.calls[0][0]).toBe('/api/event')
-    expect(beacon.mock.calls[0][1]).toBe(JSON.stringify(payload))
+    expect((beacon.mock.calls as unknown[][])[0][0]).toBe('/api/event')
+    expect((beacon.mock.calls as unknown[][])[0][1]).toBe(JSON.stringify(payload))
   })
 
   it('falls back to fetch keepalive when sendBeacon missing', () => {
@@ -22,7 +22,7 @@ describe('send', () => {
     vi.stubGlobal('fetch', fetchMock)
     send('/api/event', payload)
     expect(fetchMock).toHaveBeenCalledOnce()
-    const [url, opts] = fetchMock.mock.calls[0]
+    const [url, opts] = (fetchMock.mock.calls as unknown[][])[0] as [string, RequestInit]
     expect(url).toBe('/api/event')
     expect(opts).toMatchObject({ method: 'POST', keepalive: true, body: JSON.stringify(payload) })
   })
