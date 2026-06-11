@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig([
   {
-    entry: { index: 'src/index.ts' },
+    entry: { index: 'src/composition/index.ts' },
     format: ['esm'],
     dts: true,
     sourcemap: true,
@@ -10,7 +10,7 @@ export default defineConfig([
     treeshake: true,
   },
   {
-    entry: { takt: 'src/snippet.ts' },
+    entry: { takt: 'src/composition/snippet.ts' },
     format: ['iife'],
     globalName: 'takt',
     outExtension: () => ({ js: '.js' }),
