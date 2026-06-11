@@ -3,8 +3,7 @@ import { optOut, optIn, isBlocked } from '../src/privacy'
 import type { Config } from '../src/state'
 
 const cfg = (over: Partial<Config> = {}): Config => ({
-  domain: 'example.com', endpoint: '/api/event', auto: true,
-  outbound: false, files: false, fileExtensions: [],
+  domain: 'example.com', endpoint: '/api/event',
   respectDnt: true, excludeLocalhost: true, ...over,
 })
 

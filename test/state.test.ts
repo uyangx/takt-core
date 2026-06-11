@@ -9,15 +9,11 @@ describe('config state', () => {
   })
 
   it('applies defaults and overrides', () => {
-    const cfg = configure({ domain: 'example.com', outbound: true })
+    const cfg = configure({ domain: 'example.com' })
     expect(cfg.domain).toBe('example.com')
     expect(cfg.endpoint).toBe('/api/event')
-    expect(cfg.auto).toBe(true)
-    expect(cfg.outbound).toBe(true)
-    expect(cfg.files).toBe(false)
     expect(cfg.respectDnt).toBe(true)
     expect(cfg.excludeLocalhost).toBe(true)
-    expect(cfg.fileExtensions).toContain('pdf')
     expect(getConfig()).toBe(cfg)
   })
 

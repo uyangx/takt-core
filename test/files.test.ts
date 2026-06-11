@@ -16,9 +16,9 @@ describe('enableFiles', () => {
     resetConfig()
     document.body.innerHTML = ''
     window.history.replaceState({}, '', 'https://example.com/')
-    configure({ domain: 'example.com', fileExtensions: ['pdf', 'zip'] })
+    configure({ domain: 'example.com' })
     trackSpy = vi.spyOn(track, 'track').mockImplementation(() => {})
-    enableFiles()
+    enableFiles(['pdf', 'zip'])
   })
   afterEach(() => { trackSpy.mockRestore() })
 

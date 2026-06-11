@@ -1,12 +1,7 @@
 import { track } from '../track'
+import { findAnchor } from './dom'
 
 let installed = false
-
-function findAnchor(target: EventTarget | null): HTMLAnchorElement | null {
-  let el = target as HTMLElement | null
-  while (el && el.tagName !== 'A') el = el.parentElement
-  return el as HTMLAnchorElement | null
-}
 
 export function enableOutbound(): void {
   if (installed) return

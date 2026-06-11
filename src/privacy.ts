@@ -15,7 +15,7 @@ function hasOptedOut(): boolean {
 }
 
 function dntEnabled(): boolean {
-  const v = typeof navigator !== 'undefined' ? navigator.doNotTrack : null
+  const v = navigator.doNotTrack
   return v === '1' || v === 'yes'
 }
 
@@ -26,9 +26,7 @@ function isLocalhost(): boolean {
     h === '127.0.0.1' ||
     h === '::1' ||
     h.endsWith('.local') ||
-    /^10\./.test(h) ||
-    /^192\.168\./.test(h) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    /^10\.|^192\.168\.|^172\.(1[6-9]|2\d|3[01])\./.test(h)
   )
 }
 

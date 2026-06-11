@@ -12,6 +12,8 @@ export default defineConfig([
   {
     entry: { takt: 'src/snippet.ts' },
     format: ['iife'],
+    globalName: 'takt',
+    outExtension: () => ({ js: '.js' }),
     minify: true,
     sourcemap: true,
     treeshake: true,
