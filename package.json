@@ -1,5 +1,5 @@
 {
-  "name": "@takt/core",
+  "name": "@vskstudio/takt-core",
   "version": "0.1.0",
   "description": "Tiny privacy-friendly analytics SDK for Takt",
   "license": "MIT",
