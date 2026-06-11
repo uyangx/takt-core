@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+// @vitest-environment-options { "url": "https://example.com/" }
 import { describe, it, expect, beforeEach } from 'vitest'
 import { buildPayload } from '../src/payload'
 
