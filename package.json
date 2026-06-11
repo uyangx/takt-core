@@ -5,6 +5,24 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
+  "keywords": [
+    "analytics",
+    "privacy",
+    "tracking",
+    "pageview",
+    "takt"
+  ],
+  "homepage": "https://github.com/uyangx/takt-core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uyangx/takt-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/uyangx/takt-core/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +41,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "size": "size-limit"
+    "size": "size-limit",
+    "prepublishOnly": "pnpm build",
+    "release": "pnpm build && changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
