@@ -3,7 +3,8 @@ import { Props } from '../domain/event/Props'
 import { Revenue } from '../domain/event/Revenue'
 import { AnalyticsEvent } from '../domain/event/AnalyticsEvent'
 import { buildPayload } from '../domain/event/Payload'
-import { TrackingPolicy } from '../domain/consent/TrackingPolicy'
+import { TrackingPolicy } from './consent/TrackingPolicy'
+import type { UrlScrubber } from '../domain/url/UrlScrubber'
 import type { EventTransport } from './ports/EventTransport'
 import type { ConsentStore } from './ports/ConsentStore'
 import type { DoNotTrackProvider } from './ports/DoNotTrackProvider'
@@ -24,9 +25,12 @@ export interface AnalyticsConfig {
   endpoint: string
   respectDnt: boolean
   excludeLocalhost: boolean
+  enabled: boolean
+  debug: boolean
+  sampleRate: number
+  scrubUrl: UrlScrubber
 }
 
-/** Application service: orchestrates tracking events through ports. */
 export class Analytics {
   private readonly policy: TrackingPolicy
 
@@ -66,41 +70,37 @@ export class Analytics {
     this.consent.optIn()
   }
 
-  /** Enables SPA pageview tracking. Returns a disposer. */
   enableSpa(): () => void {
-    const tracker = new SpaPageviewTracker(this.navProvider, () => this.pageview())
-    return tracker.enable()
+    return new SpaPageviewTracker(this.navProvider, () => this.pageview()).enable()
   }
 
-  /** Enables outbound link click tracking. Returns a disposer. */
   enableOutbound(): () => void {
-    const tracker = new OutboundLinkTracker(this.clickSource, this.envProvider, (name, opts) =>
+    return new OutboundLinkTracker(this.clickSource, this.envProvider, (name, opts) =>
       this.track(name, opts),
-    )
-    return tracker.enable()
+    ).enable()
   }
 
-  /** Enables file download tracking. Returns a disposer. */
   enableFiles(extensions?: string[]): () => void {
-    const tracker = new FileDownloadTracker(this.clickSource, (name, opts) =>
-      this.track(name, opts),
-    extensions)
-    return tracker.enable()
+    return new FileDownloadTracker(
+      this.clickSource,
+      (name, opts) => this.track(name, opts),
+      extensions,
+    ).enable()
   }
 
   private _emit(name: EventName, opts?: TrackOptions): void {
-    if (this.policy.isBlocked()) return
-    const props = new Props(opts?.props)
+    if (!this.config.enabled || this.policy.isBlocked()) return
     const revenue = opts?.revenue
-      ? new Revenue(opts.revenue.amount, opts.revenue.currency)
+      ? Revenue.parse(opts.revenue.amount, opts.revenue.currency)
       : undefined
-    const event = new AnalyticsEvent(name, props, revenue)
+    const event = new AnalyticsEvent(name, new Props(opts?.props), revenue)
     const payload = buildPayload(event, {
       domain: this.config.domain,
-      url: this.envProvider.url(),
-      referrer: this.envProvider.referrer(),
+      url: this.config.scrubUrl(this.envProvider.url()),
+      referrer: this.config.scrubUrl(this.envProvider.referrer()),
       width: this.envProvider.width(),
     })
+    if (this.config.debug) console.debug('[takt] event', payload)
     this.transport.send(payload)
   }
 }

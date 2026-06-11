@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TrackingPolicy } from '../../src/domain/consent/TrackingPolicy'
+import { TrackingPolicy } from '../../src/application/consent/TrackingPolicy'
 import type { ConsentStore } from '../../src/application/ports/ConsentStore'
 import type { DoNotTrackProvider } from '../../src/application/ports/DoNotTrackProvider'
 import type { EnvironmentProvider } from '../../src/application/ports/EnvironmentProvider'
@@ -27,9 +27,12 @@ function fakeEnv(hostname = 'example.com'): EnvironmentProvider {
   }
 }
 
-const cfg = (over: Partial<{ respectDnt: boolean; excludeLocalhost: boolean }> = {}) => ({
+const cfg = (
+  over: Partial<{ respectDnt: boolean; excludeLocalhost: boolean; sampleRate: number }> = {},
+) => ({
   respectDnt: true,
   excludeLocalhost: true,
+  sampleRate: 1,
   ...over,
 })
 
@@ -116,6 +119,30 @@ describe('TrackingPolicy.isBlocked()', () => {
     )
     consent.optOut()
     expect(policy.isBlocked()).toBe(true)
+  })
+
+  it('blocks when sampling roll lands above the rate', () => {
+    const policy = new TrackingPolicy(
+      fakeConsent(), fakeDnt(), fakeEnv(), cfg({ sampleRate: 0.5 }), () => 0.9,
+    )
+    expect(policy.isBlocked()).toBe(true)
+  })
+
+  it('does not block when sampling roll lands below the rate', () => {
+    const policy = new TrackingPolicy(
+      fakeConsent(), fakeDnt(), fakeEnv(), cfg({ sampleRate: 0.5 }), () => 0.1,
+    )
+    expect(policy.isBlocked()).toBe(false)
+  })
+
+  it('never samples out when sampleRate is 1 (random untouched)', () => {
+    let called = false
+    const policy = new TrackingPolicy(
+      fakeConsent(), fakeDnt(), fakeEnv(), cfg({ sampleRate: 1 }),
+      () => { called = true; return 0.999 },
+    )
+    expect(policy.isBlocked()).toBe(false)
+    expect(called).toBe(false)
   })
 
   it('opt-out checked before DNT (DNT disabled but opted out → blocked)', () => {

@@ -7,6 +7,7 @@ import type { EnvironmentProvider } from '../../src/application/ports/Environmen
 import type { NavigationProvider } from '../../src/application/ports/NavigationProvider'
 import type { ClickSource } from '../../src/application/ports/ClickSource'
 import type { Payload } from '../../src/domain/event/Payload'
+import createUrlScrubber from '../../src/domain/url/UrlScrubber'
 
 // --- Fakes ---
 function fakeTransport() {
@@ -52,6 +53,10 @@ const defaultConfig = {
   endpoint: '/api/event',
   respectDnt: true,
   excludeLocalhost: true,
+  enabled: true,
+  debug: false,
+  sampleRate: 1,
+  scrubUrl: createUrlScrubber(),
 }
 
 function makeAnalytics(overrides: {

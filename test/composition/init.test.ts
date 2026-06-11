@@ -86,4 +86,43 @@ describe('composition/index init()', () => {
     expect(typeof instance.track).toBe('function')
     expect(typeof instance.pageview).toBe('function')
   })
+
+  it('strips query and hash from the page url by default', () => {
+    window.history.replaceState({}, '', 'https://example.com/checkout?token=secret#step2')
+    init({ domain: 'example.com', auto: true })
+    const body = JSON.parse((beaconMock.mock.calls[0] as [string, string])[1])
+    expect(body.u).toBe('https://example.com/checkout')
+  })
+
+  it('keeps the query when trackQuery is true', () => {
+    window.history.replaceState({}, '', 'https://example.com/checkout?utm_source=x')
+    init({ domain: 'example.com', auto: true, trackQuery: true })
+    const body = JSON.parse((beaconMock.mock.calls[0] as [string, string])[1])
+    expect(body.u).toBe('https://example.com/checkout?utm_source=x')
+  })
+
+  it('forwards revenue through track()', () => {
+    init({ domain: 'example.com', auto: false })
+    track('Purchase', { revenue: { amount: '29.00', currency: 'eur' } })
+    const body = JSON.parse((beaconMock.mock.calls[0] as [string, string])[1])
+    expect(body).toMatchObject({ n: 'Purchase', $: { a: '29.00', c: 'EUR' } })
+  })
+
+  it('drops events entirely when enabled is false', () => {
+    init({ domain: 'example.com', auto: true, enabled: false })
+    track('Signup')
+    expect(beaconMock).not.toHaveBeenCalled()
+  })
+
+  it('re-initialising disposes the previous SPA listener (no double pageview)', () => {
+    init({ domain: 'example.com', auto: true })
+    expect(beaconMock).toHaveBeenCalledOnce() // first pageview
+    init({ domain: 'example.com', auto: true })
+    expect(beaconMock).toHaveBeenCalledTimes(2) // second pageview, not three
+
+    beaconMock.mockClear()
+    window.history.pushState({}, '', 'https://example.com/next')
+    // only the single live SPA listener should fire, not a leaked one from the first init
+    expect(beaconMock).toHaveBeenCalledOnce()
+  })
 })

@@ -58,6 +58,45 @@ describe('runSnippet', () => {
     expect(bodies).toContainEqual(expect.objectContaining({ n: 'Early' }))
   })
 
+  it('strips query and hash from the page url by default', () => {
+    window.history.replaceState({}, '', 'https://example.com/checkout?token=secret#step2')
+    beaconMock.mockClear() // ignore any stale SPA listeners patched by earlier tests
+    runSnippet(scriptEl({ 'data-domain': 'snippet.test' }))
+    const calls = beaconMock.mock.calls as [string, string][]
+    const last = calls[calls.length - 1]
+    expect(JSON.parse(last[1]).u).toBe('https://example.com/checkout')
+  })
+
+  it('always strips the query (the inline snippet has no opt-out)', () => {
+    window.history.replaceState({}, '', 'https://example.com/checkout?utm_source=x')
+    beaconMock.mockClear()
+    runSnippet(scriptEl({ 'data-domain': 'snippet.test' }))
+    const calls = beaconMock.mock.calls as [string, string][]
+    const last = calls[calls.length - 1]
+    expect(JSON.parse(last[1]).u).toBe('https://example.com/checkout')
+  })
+
+  it('scrubs the destination url on outbound clicks and skips non-http protocols', () => {
+    runSnippet(scriptEl({ 'data-domain': 'snippet.test', 'data-outbound': '' }))
+    beaconMock.mockClear()
+
+    const mailto = document.createElement('a')
+    mailto.href = 'mailto:hi@other.com'
+    document.body.appendChild(mailto)
+    mailto.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    expect(beaconMock).not.toHaveBeenCalled()
+
+    const link = document.createElement('a')
+    link.href = 'https://other.com/path?token=secret'
+    document.body.appendChild(link)
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    const body = JSON.parse((beaconMock.mock.calls[0] as [string, string])[1])
+    expect(body).toMatchObject({ n: 'Outbound Link: Click', p: { url: 'https://other.com/path' } })
+
+    mailto.remove()
+    link.remove()
+  })
+
   it('does not send when opt-out is active (blocking test)', () => {
     localStorage.setItem('takt_ignore', '1')
     runSnippet(scriptEl({ 'data-domain': 'snippet.test' }))

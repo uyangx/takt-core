@@ -38,7 +38,8 @@ Calls made before the script finishes loading are queued and replayed — instal
 | `data-outbound` | Auto-track outbound link clicks (presence flag) | off |
 | `data-files` | Auto-track file downloads (presence flag) | off |
 | `data-exclude-localhost="false"` | Track localhost / private IPs | excluded |
-| `data-respect-dnt="false"` | Track even when DNT is on | respected |
+
+The snippet always respects Do Not Track and always strips the query string and hash from URLs. For per-query allowlisting, a custom scrubber, or to keep the query, use the npm build (`trackQuery` / `queryParams` / `scrubUrl` below).
 
 ## npm
 
@@ -86,7 +87,26 @@ stopFiles()
 
 `createTakt()` is a pure factory (no side effects until you call a method), so it tree-shakes cleanly.
 
+### Configuration
+
+`init()` and `createTakt()` accept the same options:
+
+| Option | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `domain` | `string` | `location.hostname` | Site identifier sent with every event |
+| `endpoint` | `string` | `/api/event` | Ingestion endpoint |
+| `enabled` | `boolean` | `true` | Master switch — when `false`, nothing is sent |
+| `debug` | `boolean` | `false` | Log each payload to the console before sending |
+| `sampleRate` | `number` | `1` | Keep this fraction of events (e.g. `0.25` ≈ 25%) |
+| `respectDnt` | `boolean` | `true` | Suppress events when Do Not Track is on |
+| `excludeLocalhost` | `boolean` | `true` | Suppress events on localhost / private IPs |
+| `trackQuery` | `boolean` | `false` | Keep the full query string and hash on URLs |
+| `queryParams` | `string[]` | — | Allowlist: keep only these query params, drop the rest |
+| `scrubUrl` | `(url: string) => string` | — | Custom scrubber; overrides `trackQuery` / `queryParams` |
+
 ### Privacy
+
+By default the query string and hash are stripped from every URL (page, referrer, and autocaptured link destinations) before sending — secrets in `?token=…` or `#access_token=…` never leave the browser. Opt back in with `trackQuery: true`, narrow it with a `queryParams` allowlist, or take full control with `scrubUrl`. Props and revenue are sanitized too: props are coerced to strings, capped (30 keys, 64-char keys, 1024-char values), and revenue is dropped unless the amount and 3-letter currency are well-formed.
 
 ```ts
 import { optOut, optIn } from '@vskstudio/takt-core'
@@ -95,7 +115,7 @@ optOut() // sets localStorage `takt_ignore` = '1'; no events are sent
 optIn()  // resumes tracking
 ```
 
-Events are suppressed, in order, when: the visitor has opted out, **or** Do Not Track is enabled (`respectDnt`), **or** the host is localhost / a private IP (`excludeLocalhost`).
+Events are suppressed, in order, when: the visitor has opted out, **or** Do Not Track is enabled (`respectDnt`), **or** the host is localhost / a private IP (`excludeLocalhost`), **or** the event is dropped by `sampleRate`.
 
 ## Wire payload contract
 
@@ -105,8 +125,8 @@ Every event is posted to the endpoint as a compact JSON object. The keys are fro
 | --- | --- |
 | `n` | event name (`pageview` for pageviews) |
 | `d` | domain |
-| `u` | URL |
-| `r` | referrer |
+| `u` | URL (query + hash stripped by default) |
+| `r` | referrer (query + hash stripped by default) |
 | `w` | viewport width |
 | `p` | props (object, omitted if empty) |
 | `$` | revenue `{ a: amount, c: currency }` (currency uppercased) |
@@ -116,13 +136,13 @@ Every event is posted to the endpoint as a compact JSON object. The keys are fro
 `@vskstudio/takt-core` follows a hexagonal (ports & adapters) layout:
 
 ```
-domain/          Pure business core, zero I/O.
-                 Value objects (EventName, Props, Revenue, AnalyticsEvent),
-                 payload mapping, and the TrackingPolicy (consent rules).
-application/      Use cases: the Analytics service + autocapture trackers,
-                 depending only on small single-method port interfaces.
-infrastructure/   Driven adapters: beacon/fetch transport, localStorage consent,
-                 and browser providers (DNT, environment, history, clicks).
+domain/          Pure business core, zero I/O. Value objects (EventName, Props,
+                 Revenue, AnalyticsEvent), payload mapping, and the URL scrubber.
+application/      Use cases: the Analytics service, the TrackingPolicy (consent +
+                 sampling), and autocapture trackers — depending only on small
+                 single-method port interfaces.
+infrastructure/   Driven adapters: a resilient fetch/beacon transport, localStorage
+                 consent, and browser providers (DNT, environment, history, clicks).
 composition/      createTakt() factory, the ESM entry, and the snippet adapter.
 ```
 

@@ -3,26 +3,29 @@ import type { NavigationProvider } from '../../application/ports/NavigationProvi
 export class HistoryNavigationProvider implements NavigationProvider {
   onNavigate(cb: () => void): () => void {
     const originalPush = history.pushState
+    const originalReplace = history.replaceState
 
-    const patchedPush: typeof history.pushState = function (
-      this: History,
-      ...args: Parameters<History['pushState']>
-    ) {
-      const result = originalPush.apply(this, args)
-      cb()
-      return result
-    }
+    const patch = <K extends 'pushState' | 'replaceState'>(original: History[K]): History[K] =>
+      function (this: History, ...args: Parameters<History[K]>) {
+        const result = original.apply(this, args)
+        cb()
+        return result
+      } as History[K]
+
+    const patchedPush = patch<'pushState'>(originalPush)
+    const patchedReplace = patch<'replaceState'>(originalReplace)
     history.pushState = patchedPush
+    history.replaceState = patchedReplace
 
-    const onPopState = () => cb()
-    window.addEventListener('popstate', onPopState)
+    const onNav = () => cb()
+    window.addEventListener('popstate', onNav)
+    window.addEventListener('hashchange', onNav)
 
     return () => {
-      // Restore original pushState only if still pointing to our patch
-      if (history.pushState === patchedPush) {
-        history.pushState = originalPush
-      }
-      window.removeEventListener('popstate', onPopState)
+      if (history.pushState === patchedPush) history.pushState = originalPush
+      if (history.replaceState === patchedReplace) history.replaceState = originalReplace
+      window.removeEventListener('popstate', onNav)
+      window.removeEventListener('hashchange', onNav)
     }
   }
 }
