@@ -6,21 +6,35 @@ import { NavigatorDntProvider } from '../infrastructure/browser/NavigatorDntProv
 import { WindowEnvironmentProvider } from '../infrastructure/browser/WindowEnvironmentProvider'
 import { HistoryNavigationProvider } from '../infrastructure/browser/HistoryNavigationProvider'
 import { DocumentClickSource } from '../infrastructure/browser/DocumentClickSource'
+import createUrlScrubber, { type UrlScrubber } from '../domain/url/UrlScrubber'
 
 export interface Config {
   domain?: string
   endpoint?: string
   respectDnt?: boolean
   excludeLocalhost?: boolean
+  enabled?: boolean
+  debug?: boolean
+  sampleRate?: number
+  trackQuery?: boolean
+  queryParams?: string[]
+  scrubUrl?: UrlScrubber
 }
 
-/** Factory: wires concrete browser adapters and returns an Analytics instance. */
 export function createTakt(config: Config = {}): Analytics {
   const resolvedConfig: AnalyticsConfig = {
     domain: config.domain || location.hostname,
     endpoint: config.endpoint ?? '/api/event',
     respectDnt: config.respectDnt ?? true,
     excludeLocalhost: config.excludeLocalhost ?? true,
+    enabled: config.enabled ?? true,
+    debug: config.debug ?? false,
+    sampleRate: config.sampleRate ?? 1,
+    scrubUrl: createUrlScrubber({
+      trackQuery: config.trackQuery,
+      queryParams: config.queryParams,
+      custom: config.scrubUrl,
+    }),
   }
 
   return new Analytics(

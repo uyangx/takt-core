@@ -1,5 +1,20 @@
 # @vskstudio/takt-core
 
+## 0.2.0
+
+### Minor Changes
+
+- Privacy hardening and new features.
+
+  - **URL scrubbing**: query string and hash are stripped from every URL (page, referrer, autocaptured link destinations) by default. Configurable via `trackQuery`, a `queryParams` allowlist, or a custom `scrubUrl` function.
+  - **Input validation**: props are coerced to strings, capped (30 keys, 64-char keys, 1024-char values); revenue is dropped unless the amount and 3-letter currency are well-formed. Clamps warn once in the console.
+  - **New options**: `enabled`, `debug`, and `sampleRate`.
+  - **SPA**: `replaceState` and `hashchange` are now tracked in addition to `pushState`/`popstate`.
+  - **Idempotent `init()`**: re-initialising disposes the previous instance's listeners.
+  - **Autocapture**: `mailto:` / `tel:` and other non-http links are skipped; link destination URLs are scrubbed.
+  - Expanded localhost/private-IP detection (`::1`, `0.0.0.0`).
+  - Removed dead transport adapters.
+
 ## 0.1.1
 
 ### Patch Changes
