@@ -1,0 +1,198 @@
+import { describe, it, expect, vi } from 'vitest'
+import { Analytics } from '../../src/application/Analytics'
+import type { EventTransport } from '../../src/application/ports/EventTransport'
+import type { ConsentStore } from '../../src/application/ports/ConsentStore'
+import type { DoNotTrackProvider } from '../../src/application/ports/DoNotTrackProvider'
+import type { EnvironmentProvider } from '../../src/application/ports/EnvironmentProvider'
+import type { NavigationProvider } from '../../src/application/ports/NavigationProvider'
+import type { ClickSource } from '../../src/application/ports/ClickSource'
+import type { Payload } from '../../src/domain/event/Payload'
+
+// --- Fakes ---
+function fakeTransport() {
+  const calls: Payload[] = []
+  const transport: EventTransport = { send: (p) => calls.push(p) }
+  return { transport, calls }
+}
+
+function fakeConsent(optedOut = false): ConsentStore {
+  let state = optedOut
+  return { isOptedOut: () => state, optOut: () => { state = true }, optIn: () => { state = false } }
+}
+
+const fakeDnt = (enabled = false): DoNotTrackProvider => ({ isEnabled: () => enabled })
+
+function fakeEnv(hostname = 'example.com'): EnvironmentProvider {
+  return {
+    hostname: () => hostname,
+    url: () => `https://${hostname}/test`,
+    referrer: () => 'https://ref.io/',
+    width: () => 1024,
+  }
+}
+
+function fakeNav(): { nav: NavigationProvider; trigger: () => void } {
+  let cb: (() => void) | null = null
+  const nav: NavigationProvider = {
+    onNavigate: (handler) => { cb = handler; return () => { cb = null } },
+  }
+  return { nav, trigger: () => cb?.() }
+}
+
+function fakeClick(): { click: ClickSource; trigger: (a: HTMLAnchorElement) => void } {
+  let cb: ((a: HTMLAnchorElement, e: Event) => void) | null = null
+  const click: ClickSource = {
+    onAnchorClick: (handler) => { cb = handler; return () => { cb = null } },
+  }
+  return { click, trigger: (a) => cb?.(a, new Event('click')) }
+}
+
+const defaultConfig = {
+  domain: 'example.com',
+  endpoint: '/api/event',
+  respectDnt: true,
+  excludeLocalhost: true,
+}
+
+function makeAnalytics(overrides: {
+  consent?: ConsentStore
+  dnt?: DoNotTrackProvider
+  env?: EnvironmentProvider
+  nav?: NavigationProvider
+  click?: ClickSource
+  transport?: EventTransport
+} = {}) {
+  const { transport, calls } = fakeTransport()
+  const { nav } = fakeNav()
+  const { click } = fakeClick()
+  return {
+    analytics: new Analytics(
+      defaultConfig,
+      overrides.transport ?? transport,
+      overrides.consent ?? fakeConsent(),
+      overrides.dnt ?? fakeDnt(),
+      overrides.env ?? fakeEnv(),
+      overrides.nav ?? nav,
+      overrides.click ?? click,
+    ),
+    calls: overrides.transport ? [] : calls,
+  }
+}
+
+describe('Analytics', () => {
+  describe('track()', () => {
+    it('builds correct payload for a custom event', () => {
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport })
+      analytics.track('Signup', { props: { plan: 'pro' }, revenue: { amount: '29.00', currency: 'EUR' } })
+      expect(calls).toHaveLength(1)
+      expect(calls[0]).toMatchObject({
+        n: 'Signup',
+        d: 'example.com',
+        p: { plan: 'pro' },
+        $: { a: '29.00', c: 'EUR' },
+      })
+    })
+
+    it('trims event name and rejects empty / "pageview"', () => {
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport })
+      analytics.track('  pageview  ')
+      analytics.track('')
+      analytics.track(123 as unknown as string)
+      expect(calls).toHaveLength(0)
+    })
+
+    it('suppresses send when policy blocks (opt-out)', () => {
+      const consent = fakeConsent()
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport, consent })
+      consent.optOut()
+      analytics.track('Signup')
+      expect(calls).toHaveLength(0)
+    })
+  })
+
+  describe('pageview()', () => {
+    it('sends with n:"pageview"', () => {
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport })
+      analytics.pageview()
+      expect(calls[0]).toMatchObject({ n: 'pageview' })
+    })
+  })
+
+  describe('optOut() / optIn()', () => {
+    it('delegates to ConsentStore', () => {
+      const consent = fakeConsent()
+      const spy = vi.spyOn(consent, 'optOut')
+      const spyIn = vi.spyOn(consent, 'optIn')
+      const { analytics } = makeAnalytics({ consent })
+      analytics.optOut()
+      expect(spy).toHaveBeenCalledOnce()
+      analytics.optIn()
+      expect(spyIn).toHaveBeenCalledOnce()
+    })
+
+    it('optIn unblocks tracking', () => {
+      const consent = fakeConsent(true)
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport, consent })
+      analytics.track('Signup')
+      expect(calls).toHaveLength(0)
+      analytics.optIn()
+      analytics.track('Signup')
+      expect(calls).toHaveLength(1)
+    })
+  })
+
+  describe('enableSpa()', () => {
+    it('fires pageview on navigation and disposer stops it', () => {
+      const { nav, trigger } = fakeNav()
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport, nav })
+      const dispose = analytics.enableSpa()
+      trigger()
+      expect(calls).toHaveLength(1)
+      expect(calls[0].n).toBe('pageview')
+      dispose()
+      trigger()
+      expect(calls).toHaveLength(1) // no new send after dispose
+    })
+  })
+
+  describe('enableOutbound()', () => {
+    it('fires outbound event and disposer stops it', () => {
+      const env = fakeEnv('example.com')
+      const { click, trigger } = fakeClick()
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport, env, click })
+      const dispose = analytics.enableOutbound()
+      const a = document.createElement('a')
+      a.href = 'https://other.com/page'
+      trigger(a)
+      expect(calls).toHaveLength(1)
+      expect(calls[0]).toMatchObject({ n: 'Outbound Link: Click' })
+      dispose()
+      trigger(a)
+      expect(calls).toHaveLength(1) // no new send after dispose
+    })
+  })
+
+  describe('enableFiles()', () => {
+    it('fires file download event and disposer stops it', () => {
+      const { click, trigger } = fakeClick()
+      const { transport, calls } = fakeTransport()
+      const { analytics } = makeAnalytics({ transport, click })
+      const dispose = analytics.enableFiles(['pdf'])
+      const a = document.createElement('a')
+      a.href = 'https://example.com/report.pdf'
+      trigger(a)
+      expect(calls).toHaveLength(1)
+      expect(calls[0]).toMatchObject({ n: 'File Download' })
+      dispose()
+      trigger(a)
+      expect(calls).toHaveLength(1)
+    })
+  })
+})
