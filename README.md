@@ -10,8 +10,10 @@ Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).
 ## Snippet (no build step)
 
 ```html
-<script defer src="https://cdn.example/takt.js" data-domain="example.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@takt/core/dist/takt.js" data-domain="example.com"></script>
 ```
+
+> Pin a version in production, e.g. `@takt/core@0.1.0`. jsDelivr and unpkg both serve the snippet straight from npm — no extra hosting required.
 
 Then, anywhere on the page:
 
