@@ -1,5 +1,11 @@
 # @vskstudio/takt-core
 
+## 0.1.1
+
+### Patch Changes
+
+- Publication via npm Trusted Publishing / token CI (pas de changement de code).
+
 ## 0.1.0
 
 ### Minor Changes
