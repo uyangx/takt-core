@@ -1,10 +1,21 @@
+<div align="center">
+
 # @vskstudio/takt-core
 
-Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).
+**Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).**
+
+[![npm version](https://img.shields.io/npm/v/@vskstudio/takt-core?color=2563eb&logo=npm)](https://www.npmjs.com/package/@vskstudio/takt-core)
+[![snippet size](https://img.shields.io/badge/snippet-%E2%89%A41%20kB%20gzip-2563eb)](https://www.npmjs.com/package/@vskstudio/takt-core)
+[![zero deps](https://img.shields.io/badge/dependencies-0-2563eb)](./package.json)
+[![license](https://img.shields.io/npm/l/@vskstudio/takt-core?color=2563eb)](./LICENSE)
+
+</div>
+
+---
 
 - **Zero dependencies**, tree-shakeable ESM module.
-- **≤ 1 kB gzip** drop-in snippet.
-- **Privacy first**: honours opt-out, Do Not Track, and excludes localhost/private IPs by default.
+- **≤ 1 kB gzip** drop-in snippet — no build step required.
+- **Privacy first**: honours opt-out and Do Not Track, strips query strings, and excludes localhost / private IPs by default.
 - **Hexagonal core**: a pure domain wrapped in ports & adapters — easy to test, easy to extend.
 
 ## Snippet (no build step)
