@@ -1,5 +1,11 @@
 # @vskstudio/takt-core
 
+## 0.2.1
+
+### Patch Changes
+
+- Refresh package metadata and publish with a signed npm provenance attestation. Documents the snippet's intentional Do Not Track divergence from the full SDK (the inline snippet checks the standard `'1'` only to stay within the ≤1 kB budget). No runtime change.
+
 ## 0.2.0
 
 ### Minor Changes
