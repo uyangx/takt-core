@@ -104,6 +104,12 @@ describe('runSnippet', () => {
     expect(beaconMock).not.toHaveBeenCalled()
   })
 
+  it('does not send when Do Not Track is enabled (blocking test)', () => {
+    vi.stubGlobal('navigator', { sendBeacon: beaconMock, doNotTrack: '1' })
+    runSnippet(scriptEl({ 'data-domain': 'snippet.test' }))
+    expect(beaconMock).not.toHaveBeenCalled()
+  })
+
   it('respects data-exclude-localhost=false', () => {
     // When excludeLocalhost is false, localhost should NOT be blocked
     Object.defineProperty(window, 'location', {
