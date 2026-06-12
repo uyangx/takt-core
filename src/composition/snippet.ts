@@ -22,6 +22,8 @@ export function runSnippet(el: HTMLScriptElement | null): void {
   // Frozen short-circuit order: opt-out → DNT → localhost
   function emit(name: string, opts?: Opts): void {
     try { if (localStorage.getItem('takt_ignore') === '1') return } catch { /* noop */ }
+    // Standard DNT value only; the full SDK also honors the legacy 'yes'
+    // (old Firefox/Safari) — omitted here to stay within the ≤1 kB budget.
     if (navigator.doNotTrack === '1') return
     if (excl) {
       const h = location.hostname
