@@ -2,7 +2,7 @@
 
 # @vskstudio/takt-core
 
-**Tiny, privacy-friendly analytics SDK for [Takt](https://github.com/uyangx/takt).**
+**Tiny, privacy-friendly analytics SDK for Takt.**
 
 [![npm version](https://img.shields.io/npm/v/@vskstudio/takt-core?color=2563eb&logo=npm)](https://www.npmjs.com/package/@vskstudio/takt-core)
 [![snippet size](https://img.shields.io/badge/snippet-%E2%89%A41%20kB%20gzip-2563eb)](https://www.npmjs.com/package/@vskstudio/takt-core)
@@ -130,7 +130,7 @@ Events are suppressed, in order, when: the visitor has opted out, **or** Do Not 
 
 ## Wire payload contract
 
-Every event is posted to the endpoint as a compact JSON object. The keys are frozen — the [Takt backend](https://github.com/uyangx/takt) ingestion depends on them:
+Every event is posted to the endpoint as a compact JSON object. The keys are frozen — the Takt backend ingestion depends on them:
 
 | Key | Meaning |
 | --- | --- |
